@@ -32,7 +32,7 @@ dependencies can resolve.
 | **commands/** | 11 | `/setup` (run first — sets the kit up for your project), `/feature-workflow`, `/fix`, `/fix-issue`, `/merge-prs`, `/repo-clean-up`, `/test-guide`, `/file-bug`, `/file-feature`, `/cron-bootstrap`, `/bump`. |
 | **skills/** | 15 | `planning`, `plan-audit`, `plan-verify`, `feature-workflow`, `fix-issue`, `file-bug`, `file-feature`, `triage`, `verify`, `release-gate`, `ai-coding-agents`, `cc-suite`, `mcp-dev`, `mcp-server-manager`, `workflow-audit`. |
 | **hooks/** | 8 + `hooks.json` | Prompt-refinement, evidence/issue-mirror gates, a TDD guard, a Codex-audit merge gate, and stop-time checks — wired via `hooks/hooks.json`. |
-| **rules/** | 11 | Engineering principles, **design-before-coding**, TDD, doc/comment sync, version bump, the binding 6-gate feature workflow, parallel execution, background shells, Codex-runner isolation, and AI governance. Shipped as bundled docs (see [Activating the rules](#activating-the-rules)). |
+| **rules/** | 12 | Engineering principles, **design-before-coding**, **no-self-designed-UI**, TDD, doc/comment sync, version bump, the binding 6-gate feature workflow, parallel execution, background shells, Codex-runner isolation, and AI governance. Shipped as bundled docs (see [Activating the rules](#activating-the-rules)). |
 | **cron-prompts/** | 4 | `bugfix`, `feature`, `verify`, `watchdog` prompts for scheduled-agent runs (via `/cron-bootstrap`). |
 
 Commands, agents, skills, and hooks activate automatically once the plugin is enabled.
@@ -53,6 +53,7 @@ Then in your project's `CLAUDE.md`:
 ```markdown
 @.claude/rules/00-engineering-principles.md
 @.claude/rules/05-design-before-coding.md
+@.claude/rules/06-no-self-designed-ui.md
 @.claude/rules/10-tdd.md
 @.claude/rules/47-feature-workflow.md
 @.claude/rules/60-ai-governance.md
