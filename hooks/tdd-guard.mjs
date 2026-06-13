@@ -7,7 +7,7 @@
 // Scope (intentionally narrow to the high-risk layers you configure):
 //   Project high-risk paths come from
 //   <project>/.claude/tdd-guard.paths.json (a JSON array of path
-//   prefixes). `/init` writes it; an empty/absent file disables the guard.
+//   prefixes). `/setup` writes it; an empty/absent file disables the guard.
 //
 // Behavior:
 //   - For a Write/Edit/MultiEdit targeting a file in scope:
@@ -68,7 +68,7 @@ const rel = abs.startsWith(repoRoot + "/") ? abs.slice(repoRoot.length + 1) : ab
 //   <project>/.claude/tdd-guard.paths.json
 // a JSON array of path prefixes (relative to the project root), e.g.
 //   ["src/payments/", "src/auth/"]
-// `/init` writes this file. If it is absent or empty, the guard is disabled.
+// `/setup` writes this file. If it is absent or empty, the guard is disabled.
 let SCOPED = [];
 try {
   const raw = readFileSync(resolve(repoRoot, ".claude/tdd-guard.paths.json"), "utf8");

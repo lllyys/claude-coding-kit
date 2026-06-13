@@ -1,8 +1,8 @@
 ---
-description: Initialize claude-kit in this project — detect the tech stack, confirm the commands, then write the TDD/guardian config, copy the process rules in (wired via @import), set the high-risk TDD paths, and scaffold the trackers. Run once when adopting the kit; safe to re-run.
+description: Set up claude-kit in this project — detect the tech stack, confirm the commands, then write the TDD/guardian config, copy the process rules in (wired via @import), set the high-risk TDD paths, and scaffold the trackers. Run once when adopting the kit; safe to re-run.
 ---
 
-# /init — set up claude-kit for this project
+# /setup — set up claude-kit for this project
 
 Bootstrap everything claude-kit needs in the **current project**: detect the stack, confirm
 the commands with the user, then write config and scaffolding. **Idempotent** — re-running

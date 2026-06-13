@@ -29,7 +29,7 @@ dependencies can resolve.
 | Component | Count | What it is |
 |---|---|---|
 | **agents/** | 9 | `planner`, `implementer`, `auditor`, `verifier`, `test-runner`, `spec-guardian`, `impact-analyst`, `release-steward`, `manual-test-author` — the roles the workflow delegates to. |
-| **commands/** | 11 | `/init` (run first — sets the kit up for your project), `/feature-workflow`, `/fix`, `/fix-issue`, `/merge-prs`, `/repo-clean-up`, `/test-guide`, `/file-bug`, `/file-feature`, `/cron-bootstrap`, `/bump`. |
+| **commands/** | 11 | `/setup` (run first — sets the kit up for your project), `/feature-workflow`, `/fix`, `/fix-issue`, `/merge-prs`, `/repo-clean-up`, `/test-guide`, `/file-bug`, `/file-feature`, `/cron-bootstrap`, `/bump`. |
 | **skills/** | 15 | `planning`, `plan-audit`, `plan-verify`, `feature-workflow`, `fix-issue`, `file-bug`, `file-feature`, `triage`, `verify`, `release-gate`, `ai-coding-agents`, `cc-suite`, `mcp-dev`, `mcp-server-manager`, `workflow-audit`. |
 | **hooks/** | 8 + `hooks.json` | Prompt-refinement, evidence/issue-mirror gates, a TDD guard, a Codex-audit merge gate, and stop-time checks — wired via `hooks/hooks.json`. |
 | **rules/** | 10 | Engineering principles, TDD, doc/comment sync, version bump, the binding 6-gate feature workflow, parallel execution, background shells, Codex-runner isolation, and AI governance. Shipped as bundled docs (see [Activating the rules](#activating-the-rules)). |
@@ -40,7 +40,7 @@ Commands, agents, skills, and hooks activate automatically once the plugin is en
 ## Activating the rules
 
 Claude Code plugins have no native `rules/` component, so the kit ships its process rules as
-**bundled docs** you opt into. `/init` does this for you; to do it manually, copy them into
+**bundled docs** you opt into. `/setup` does this for you; to do it manually, copy them into
 your project and `@import` them from your `CLAUDE.md` so they load as always-on guidance:
 
 ```sh
@@ -63,9 +63,9 @@ tune any of them per project.
 
 ## Per-project configuration
 
-**The fast path: run `/init`.** After installing the plugin, run `/init` in your project — it
+**The fast path: run `/setup`.** After installing the plugin, run `/setup` in your project — it
 detects your stack, writes the config below, copies the process rules in (wired via `@import`),
-sets your high-risk TDD paths, and scaffolds the trackers. The steps below are what `/init`
+sets your high-risk TDD paths, and scaffolds the trackers. The steps below are what `/setup`
 automates — use them for reference or manual fine-tuning:
 
 1. **Test / coverage commands** — copy `examples/tdd-guardian/config.json` to
