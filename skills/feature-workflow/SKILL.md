@@ -38,7 +38,7 @@ running a fix through this skill skips the bug-tracker workflow.
 
 ## Hooks you'll trip
 
-These PreToolUse hooks are provided by claude-kit (wired via the plugin's
+These PreToolUse hooks are provided by claude-coding-kit (wired via the plugin's
 `hooks/hooks.json`):
 
 | Hook | Triggers when | What it requires |

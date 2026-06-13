@@ -88,7 +88,7 @@ until [ -f "$TASK_DONE" ]; do sleep 5; done
 
 ## Cron-specific implications
 
-The cron prompts (`${CLAUDE_PLUGIN_ROOT}/cron-prompts/{verify,bugfix,watchdog}.md`, provided by claude-kit) fire as fresh agent sessions. A background shell from a prior session can outlive that session's logical end (until the OS reaps it) and still appear in the operator's UI. To avoid this:
+The cron prompts (`${CLAUDE_PLUGIN_ROOT}/cron-prompts/{verify,bugfix,watchdog}.md`, provided by claude-coding-kit) fire as fresh agent sessions. A background shell from a prior session can outlive that session's logical end (until the OS reaps it) and still appear in the operator's UI. To avoid this:
 
 - A cron iteration must end with no `run_in_background` shells still tracked. Before the iteration's terminal `echo "$(date) <kind> ENDED <outcome>"`, ensure: any test gates have completed (the gate is foreground or its native notification arrived), no `run_in_background` shells were launched solely as waiters, no `pgrep`-based polling loops remain queued.
 - If a long test gate IS in flight, prefer one of these closures:

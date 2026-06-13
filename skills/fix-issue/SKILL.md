@@ -41,7 +41,7 @@ entirely in `/feature-workflow`.
 
 ## Hooks you'll trip
 
-Three PreToolUse hooks (provided by claude-kit, wired via the plugin's
+Three PreToolUse hooks (provided by claude-coding-kit, wired via the plugin's
 `hooks/hooks.json`) gate this pipeline:
 
 | Hook | Triggers when | What it requires |

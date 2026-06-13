@@ -1,12 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "claude-kit",
-  "displayName": "Claude Kit",
-  "version": "0.2.3",
+  "name": "claude-coding-kit",
+  "displayName": "Claude Coding Kit",
+  "version": "0.3.0",
   "description": "Stack-agnostic Claude Code toolkit: agents, process rules, slash commands, skills, and workflow hooks that drop into any coding project.",
   "author": { "name": "lllyys" },
-  "homepage": "https://github.com/lllyys/claude-kit",
-  "repository": "https://github.com/lllyys/claude-kit",
+  "homepage": "https://github.com/lllyys/claude-coding-kit",
+  "repository": "https://github.com/lllyys/claude-coding-kit",
   "license": "MIT",
   "keywords": [
     "claude-code",

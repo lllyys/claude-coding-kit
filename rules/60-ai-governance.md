@@ -48,7 +48,7 @@ acknowledgment in the PR description before merge.
 
 ## 5. Test-first is hook-enforced for high-risk paths
 
-For the high-risk paths, a Claude Code PreToolUse hook (provided by claude-kit)
+For the high-risk paths, a Claude Code PreToolUse hook (provided by claude-coding-kit)
 blocks `Write`/`Edit` on production source files unless a sibling test file
 (matching the project's test-file naming convention) exists. This is
 structural enforcement of `.claude/rules/10-tdd.md`, not a replacement for
@@ -70,7 +70,7 @@ Allow-list within scope: the project's test-file patterns plus
 non-executable files (type-only declarations, style/asset files).
 
 To extend the scope to a new feature path, edit the `SCOPED` array in the
-TDD-guard hook (provided by claude-kit) (rename or add a parallel hook for
+TDD-guard hook (provided by claude-coding-kit) (rename or add a parallel hook for
 larger features).
 
 ## 6. Cross-model review at risk points

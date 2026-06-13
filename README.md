@@ -1,4 +1,4 @@
-# claude-kit
+# claude-coding-kit
 
 A **stack-agnostic Claude Code plugin** — the process/methodology backbone (agents, slash
 commands, skills, workflow hooks, and process rules) that works on *any* coding project,
@@ -16,11 +16,11 @@ by your project's *own* configured commands, not hardcoded ones.
 /plugin marketplace add xiaolai/claude-plugin-marketplace
 
 # 2. Add this kit's marketplace, then install it (pulls its dependencies automatically)
-/plugin marketplace add lllyys/claude-kit
-/plugin install claude-kit@lllyys
+/plugin marketplace add lllyys/claude-coding-kit
+/plugin install claude-coding-kit@lllyys
 ```
 
-Installing `claude-kit` automatically installs its four companion plugins (see
+Installing `claude-coding-kit` automatically installs its four companion plugins (see
 [Dependencies](#dependencies)). Step 1 is required so those cross-marketplace
 dependencies can resolve.
 
@@ -86,7 +86,7 @@ automates — use them for reference or manual fine-tuning:
 
 ## Dependencies
 
-`claude-kit` declares hard dependencies on four companion plugins (all from the `xiaolai`
+`claude-coding-kit` declares hard dependencies on four companion plugins (all from the `xiaolai`
 marketplace), installed automatically:
 
 - **cc-suite** — Claude ↔ Codex ↔ Gemini bridging and cross-model delegation/audit.
@@ -105,7 +105,7 @@ To stay universal, the following were left out (they're stack- or domain-specifi
 ## Layout
 
 ```
-claude-kit/
+claude-coding-kit/
 ├── .claude-plugin/
 │   ├── plugin.json        # manifest + dependencies
 │   └── marketplace.json   # self-marketplace (this repo installs itself)
@@ -113,7 +113,7 @@ claude-kit/
 ├── commands/              # 11 slash commands
 ├── skills/                # 15 skills
 ├── hooks/                 # hook scripts + hooks.json
-├── rules/                 # 10 bundled process rules (opt-in via @import)
+├── rules/                 # 12 bundled process rules (opt-in via @import)
 ├── cron-prompts/          # 4 scheduled-agent prompts
 ├── examples/              # per-project config templates to copy in
 ├── LICENSE

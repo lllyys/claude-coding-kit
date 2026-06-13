@@ -14,7 +14,7 @@ set -euo pipefail
 
 LOG_PATH="${1:-}"
 
-# This script ships with the claude-kit plugin (under
+# This script ships with the claude-coding-kit plugin (under
 # ${CLAUDE_PLUGIN_ROOT}/skills/release-gate/scripts/), so it can't derive the
 # adopter's repo root from its own location. Resolve the repo root from the
 # project's working tree instead (git top-level, falling back to cwd). The

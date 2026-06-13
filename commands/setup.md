@@ -1,10 +1,10 @@
 ---
-description: Set up claude-kit in this project — detect the tech stack, confirm the commands, then write the TDD/guardian config, copy the process rules in (wired via @import), set the high-risk TDD paths, and scaffold the trackers. Run once when adopting the kit; safe to re-run.
+description: Set up claude-coding-kit in this project — detect the tech stack, confirm the commands, then write the TDD/guardian config, copy the process rules in (wired via @import), set the high-risk TDD paths, and scaffold the trackers. Run once when adopting the kit; safe to re-run.
 ---
 
-# /setup — set up claude-kit for this project
+# /setup — set up claude-coding-kit for this project
 
-Bootstrap everything claude-kit needs in the **current project**: detect the stack, confirm
+Bootstrap everything claude-coding-kit needs in the **current project**: detect the stack, confirm
 the commands with the user, then write config and scaffolding. **Idempotent** — re-running
 updates existing files in place rather than duplicating, and never clobbers the user's own
 edits without backing them up first.
@@ -98,7 +98,7 @@ The kit's rules are bundled docs, opted into via `@import` (Claude Code plugins 
    managed block so re-running stays idempotent:
 
    ```markdown
-   <!-- claude-kit:rules (managed — edit the import list, not the markers) -->
+   <!-- claude-coding-kit:rules (managed — edit the import list, not the markers) -->
    @.claude/rules/00-engineering-principles.md
    @.claude/rules/05-design-before-coding.md
    @.claude/rules/06-no-self-designed-ui.md
@@ -111,7 +111,7 @@ The kit's rules are bundled docs, opted into via `@import` (Claude Code plugins 
    @.claude/rules/49-background-shells.md
    @.claude/rules/53-codex-runner-isolation.md
    @.claude/rules/60-ai-governance.md
-   <!-- /claude-kit:rules -->
+   <!-- /claude-coding-kit:rules -->
    ```
 
    Offer to import a subset if the user prefers. Also add a one-line **stack note** near the
@@ -129,7 +129,7 @@ Create only what's missing; never overwrite an existing tracker.
 ## Step 7 — Verify the companion plugins
 
 Confirm the four dependency plugins are installed and enabled: **cc-suite**, **tdd-guardian**,
-**docs-guardian**, **claude-english-buddy**. They install automatically with claude-kit; if any
+**docs-guardian**, **claude-english-buddy**. They install automatically with claude-coding-kit; if any
 is missing, tell the user how to install it rather than proceeding silently.
 
 ## Step 8 — Summarize
