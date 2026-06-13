@@ -19,11 +19,24 @@ Work through the steps in order. Do not write any files until after Step 3 (conf
   If that variable is unset in the shell, find the install dir (the directory containing this
   repo's `rules/` and `examples/`) before continuing — do not guess paths.
 
-## Step 2 — Detect the tech stack
+## Step 2 — Detect (or declare) the tech stack
 
 Scan the project root for manifest files and infer the language, package manager, and
-commands. Use this table. If **several** manifests match, ask the user which is the primary
-project (or, for a monorepo, which package to target):
+commands, using the table below. Handle three cases:
+
+- **One manifest** → detect from it.
+- **Several manifests** → ask the user which is the primary project (or, for a monorepo,
+  which package to target).
+- **None** — an **empty or freshly-initialized repo** with no manifest yet → do **NOT** fail.
+  Switch to *declare* mode: ask the user what stack they intend to use (language + package
+  manager + test runner), and derive the commands from the table as if that manifest were
+  present. Then offer — but don't force — to **scaffold a starter** so there's something to
+  detect next time, e.g. `npm create vite@latest` / `npm init -y`, `uv init` / `poetry init`,
+  `cargo init`, `go mod init <module>`, `bundle init`, `dotnet new`, `composer init`, or
+  `swift package init`. If the user declines scaffolding, still write the config from the
+  declared stack so the kit is configured from the very first commit.
+
+Detection table (also the reference for *declare* mode):
 
 | Manifest | Language | Package manager (lockfile) | Test | Coverage | Build | Lint |
 |---|---|---|---|---|---|---|
