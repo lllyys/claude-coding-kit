@@ -100,6 +100,7 @@ The kit's rules are bundled docs, opted into via `@import` (Claude Code plugins 
    ```markdown
    <!-- claude-kit:rules (managed — edit the import list, not the markers) -->
    @.claude/rules/00-engineering-principles.md
+   @.claude/rules/05-design-before-coding.md
    @.claude/rules/10-tdd.md
    @.claude/rules/20-logging-and-docs.md
    @.claude/rules/22-comment-maintenance.md
