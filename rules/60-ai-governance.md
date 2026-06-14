@@ -97,9 +97,19 @@ subagent rather than letting the main thread accumulate context. Use:
 | Task class | Subagent |
 |---|---|
 | Open-ended search across the codebase | `Explore` |
-| Multi-source web research | `researcher` |
+| Focused web research (one question) | `researcher` (leaf — dispatched by the orchestrator) |
+| Broad / high-stakes / fan-out research | `/deep-research` from the orchestrator — never nested inside a subagent |
 | Independent plan/code review | `cc-suite:review-plan`, `auditor` |
 | Implementation of a single scoped WI | `execution-agent` or `implementer` |
+
+**Routing is the orchestrator's job.** Kit subagents carry no `Agent` tool, so
+they cannot dispatch research (or any subagent) themselves — the main thread (or
+a slash command running on it) classifies the need and dispatches `researcher`
+(focused) or invokes `/deep-research` (broad/fan-out), then feeds the findings
+in. A leaf agent that hits a too-broad question signals *up* ("recommend
+deep-research") rather than nesting a fan-out harness it can't safely run.
+`/deep-research` is an optional capability — degrade to a focused pass (clearly
+labeled) when it isn't available.
 
 Aggressive `/clear` between unrelated tasks; new session per phase.
 

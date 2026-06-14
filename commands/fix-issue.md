@@ -61,7 +61,7 @@ Follow the philosophy from `/fix` — no half measures.
 
 #### 3b. Feature Path
 
-1. **Research** — dispatch the `researcher` agent for best practices, prior art, and established patterns (rule 60 §8; `/deep-research` for a broad question), and fold its cited findings into the design.
+1. **Research** — you're on the main thread, so you route it (rule 60 §8): for a focused question, dispatch the `researcher` agent (best practices, prior art, established patterns); for a broad/high-stakes one, invoke `/deep-research` directly (a subagent can't). Fold the cited findings into the design.
 2. **Plan** — Design the implementation. If it would touch 10+ files or need 4+ work items, redirect to `/feature-workflow` and STOP this pipeline.
 3. **TDD implement** — RED/GREEN/REFACTOR per work item.
 4. **Edge cases** — Brainstorm and test: empty input, null, boundary values, malformed input, rapid/repeated actions, concurrent access.

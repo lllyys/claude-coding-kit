@@ -15,6 +15,7 @@ Goal: take a high-level plan and drive it to completion using specialized subage
 ## Workflow (always in this order)
 
 1) **Plan (Planner agent)**
+   - **Research first — you route it, the Planner can't** (it has no `Agent`/`Skill` tool). Classify the need (rule 60 §8): focused → dispatch the `researcher` agent; broad/high-stakes → invoke `/deep-research` directly (you're on the main thread). Pass the cited findings into the Planner as input.
    - Create or refine a modular plan in the project docs directory.
    - Break into Work Items with explicit acceptance criteria, tests, and rollback notes.
 
