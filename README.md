@@ -28,7 +28,7 @@ dependencies can resolve.
 
 | Component | Count | What it is |
 |---|---|---|
-| **agents/** | 9 | `planner`, `implementer`, `auditor`, `verifier`, `test-runner`, `spec-guardian`, `impact-analyst`, `release-steward`, `manual-test-author` — the roles the workflow delegates to. |
+| **agents/** | 10 | `planner`, `implementer`, `auditor`, `verifier`, `test-runner`, `spec-guardian`, `impact-analyst`, `release-steward`, `manual-test-author`, `researcher` — the roles the workflow delegates to. |
 | **commands/** | 11 | `/setup` (run first — sets the kit up for your project), `/feature-workflow`, `/fix`, `/fix-issue`, `/merge-prs`, `/repo-clean-up`, `/test-guide`, `/file-bug`, `/file-feature`, `/cron-bootstrap`, `/bump`. |
 | **skills/** | 15 | `planning`, `plan-audit`, `plan-verify`, `feature-workflow`, `fix-issue`, `file-bug`, `file-feature`, `triage`, `verify`, `release-gate`, `ai-coding-agents`, `cc-suite`, `mcp-dev`, `mcp-server-manager`, `workflow-audit`. |
 | **hooks/** | 8 + `hooks.json` | Prompt-refinement, evidence/issue-mirror gates, a TDD guard, a Codex-audit merge gate, and stop-time checks — wired via `hooks/hooks.json`. |
@@ -109,7 +109,7 @@ claude-coding-kit/
 ├── .claude-plugin/
 │   ├── plugin.json        # manifest + dependencies
 │   └── marketplace.json   # self-marketplace (this repo installs itself)
-├── agents/                # 9 subagents
+├── agents/                # 10 subagents
 ├── commands/              # 11 slash commands
 ├── skills/                # 15 skills
 ├── hooks/                 # hook scripts + hooks.json

@@ -9,7 +9,10 @@ You produce a modular plan that is executable by other agents.
 
 ## Research Phase (mandatory for new features)
 
-Before writing any plan, research:
+Before writing any plan, research best practices and prior art. You have only
+`Read`/`Grep`, so **dispatch the `researcher` agent** for the best-practices and
+prior-art research below and fold its cited findings into the plan (rule 60 §8);
+use `/deep-research` for a broad or high-stakes question.
 - **Industry best practices** — search official docs, well-known libraries, and popular open-source projects for established patterns.
 - **Prior art** — how do comparable tools or libraries in this domain solve this problem? What established conventions, patterns, or APIs exist that this work should follow?
 - **Edge cases** — brainstorm exhaustively: empty input, null/undefined, max values, concurrent access, Unicode/non-ASCII text, rapid repeated actions, network/IO failures, cancellation/timeouts, missing/invalid configuration or credentials, downstream/dependency errors.

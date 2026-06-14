@@ -98,7 +98,7 @@ subagent rather than letting the main thread accumulate context. Use:
 | Task class | Subagent |
 |---|---|
 | Open-ended search across the codebase | `Explore` |
-| Multi-source web research | `coding-researcher` |
+| Multi-source web research | `researcher` |
 | Independent plan/code review | `cc-suite:review-plan`, `auditor` |
 | Implementation of a single scoped WI | `execution-agent` or `implementer` |
 
