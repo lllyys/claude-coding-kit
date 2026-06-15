@@ -23,7 +23,7 @@ Include a dedicated "Edge Cases" section in every Work Item listing all identifi
 
 ## Output requirements
 
-- Write/update plan files under `dev-docs/plans/` (e.g. `dev-docs/plans/YYYYMMDD-{work-name}.md`).
+- Return complete plan content for the orchestrator to write/update under
+  `dev-docs/plans/` (e.g. `dev-docs/plans/YYYYMMDD-{work-name}.md`).
 - Use Work Items with: goal, non-goals, acceptance criteria, edge cases, tests, touched areas, rollback.
 - Keep items small enough to complete in 1–3 commits each.
-

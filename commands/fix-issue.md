@@ -22,7 +22,7 @@ $ARGUMENTS
 
 ## Single-Issue Pipeline
 
-When exactly one issue number is provided, run phases 1-6 sequentially.
+When exactly one issue number is provided, run phases 1-9 sequentially.
 
 ### Phase 1: Fetch & Classify
 
@@ -180,12 +180,12 @@ Also verify sync rules:
 ### Phase 6: Create PR
 
 ```bash
-gh pr create --title "{type}: {concise description} (fixes #{N})" --body "$(cat <<'EOF'
+gh pr create --title "{type}: {concise description}" --body "$(cat <<'EOF'
 ## Summary
 
 {1-3 bullet points describing what changed and why}
 
-Fixes #{N}
+Refs #{N}
 
 ## What Changed
 
@@ -212,6 +212,31 @@ EOF
 ```
 
 Report the PR URL to the user.
+
+### Phase 9: Post-Merge Close Gate
+
+The issue stays open after merge. Do not use an auto-closing PR keyword and do
+not close it merely because the PR landed.
+
+1. Immediately after merge, apply the `awaiting-verification` label and comment
+   with the shipped version and merge commit SHA.
+2. Check out the merged build on `main` and re-run the original reproduction
+   using the app's real execution path (or the skill's documented
+   high-fidelity verification-exception path when run-the-app reproduction is
+   physically impossible).
+3. Record what was tested and observed. For the exception path, write
+   `dev-docs/verification/bug-{N}-{YYYYMMDD}.md` using
+   `dev-docs/verification/SCHEMA.md`.
+4. Only after verification passes, post a closure comment citing the merge SHA,
+   verification method, observed result, and evidence file when applicable;
+   then close:
+
+   ```bash
+   gh issue close {N}
+   ```
+
+If verification fails or is blocked, keep the issue open and follow the
+`fix-issue` skill's Phase 9 label/follow-up rules.
 
 ---
 

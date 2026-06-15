@@ -68,9 +68,9 @@ logic, and shared mutable state:
 Allow-list within scope: the project's test-file patterns plus
 non-executable files (type-only declarations, style/asset files).
 
-To extend the scope to a new feature path, edit the `SCOPED` array in the
-TDD-guard hook (provided by claude-coding-kit) (rename or add a parallel hook for
-larger features).
+To extend the scope to a new feature path, add its project-relative path prefix
+to `.claude/tdd-guard.paths.json` (a JSON array). `/setup` creates this file; an
+empty or absent array disables the guard.
 
 ## 6. Cross-model review at risk points
 

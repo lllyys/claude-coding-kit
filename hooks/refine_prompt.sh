@@ -20,5 +20,11 @@ $text
 EOF
 ) || { echo "{\"decision\":\"block\",\"reason\":\"Refinement error\"}"; exit 0; }
 
-echo "$result" | pbcopy
-echo "{\"decision\":\"block\",\"reason\":\"Refined (copied):\n$result\"}"
+if command -v pbcopy >/dev/null 2>&1; then
+    printf '%s' "$result" | pbcopy
+    message="Refined (copied):"$'\n'"$result"
+else
+    message="Refined:"$'\n'"$result"
+fi
+
+jq -n --arg reason "$message" '{decision:"block",reason:$reason}'

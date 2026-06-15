@@ -2,7 +2,7 @@
 
 Binding sequence for every feature implementation. Six gates, never skip one.
 
-> **Plan → Independent plan audit → TDD implementation → Implementation audit loop → Verification → Merge**
+> **Plan → Independent plan audit → TDD implementation → Implementation audit loop → Gate 5a verification → Merge → Gate 5b evidence**
 
 This is a **gate model**, not a chronological task list. Each gate has an explicit acceptance bar; you do not enter the next gate until the current gate's bar is met. Multiple iterations within a gate are normal.
 
@@ -82,15 +82,41 @@ Same author/auditor separation as Gate 2.
 
 ## Gate 5 — Verification
 
-Run the app the way this project runs — CLI, server, desktop, browser, or a library test harness, whatever applies — and observe the behavior; automate with the project's E2E tool if it has one. For each PR before it merges:
+Gate 5 is split around Gate 6 because the final evidence file must name the
+merge commit on `main`.
 
-- **Foundational WIs** (DTOs, interfaces, utilities, pure types — no user-observable behavior): unit + integration tests + audit are sufficient. No app-level verification required.
-- **Behavioral WIs** (anything that changes app behavior, persistence, networking, external calls, streaming, rendered output, or user flow): **slice verification** — exercise the slice end-to-end against the real environment available at this point. Run the app the way this project runs and observe the behavior, automating with the project's E2E tool where practical; for network/integration features, against a real or mocked endpoint behind the project's intended abstraction; for data-transform features, with fixture inputs.
-- **Final WI** (the one that completes the feature): full end-to-end acceptance pass — every acceptance criterion exercised. This is what flips the feature row from `DONE` to `VERIFIED`.
+### Gate 5a — Pre-merge acceptance
 
-Record slice verification in the PR description (what was run, what was observed). Record final acceptance verification in a structured evidence file at `dev-docs/verification/feature-<id>-<YYYYMMDD>.md` per the schema in `dev-docs/verification/SCHEMA.md`. The `check_terminal_status_evidence.sh` PreToolUse hook (provided by claude-coding-kit) blocks any tracker edit that flips a row to `VERIFIED` (features) or `FIXED` (bugs) without a matching evidence file.
+Run before each PR merges:
 
-**Acceptance bar per PR**: every behavioral slice in the PR has been verified end-to-end at the level appropriate to its WI tier. Final WI requires full acceptance pass + evidence file.
+- **Foundational WIs** (DTOs, interfaces, utilities, pure types — no
+  user-observable behavior): unit + integration tests + audit are sufficient.
+- **Behavioral WIs** (app behavior, persistence, networking, external calls,
+  streaming, rendered output, or user flow): exercise the slice end-to-end
+  against the real environment available at this point. Automate with the
+  project's E2E tool where practical.
+- **Final WI**: run the final pre-merge slice and record any acceptance checks
+  that require the merged build as pending Gate 5b.
+
+Record what was run and observed in the PR description.
+
+**Acceptance bar per PR**: every slice available before merge has been verified
+at the level appropriate to its WI tier. This is the Gate 5 prerequisite for
+Gate 6.
+
+### Gate 5b — Post-merge evidence
+
+Run after the final WI merges. Check out the merged build, exercise every
+acceptance criterion, and write
+`dev-docs/verification/feature-<id>-<YYYYMMDD>.md` per
+`dev-docs/verification/SCHEMA.md`. Its `commit_sha` is the final WI's merge SHA
+on `main`, so this artifact cannot be completed before Gate 6.
+
+Only `result: pass` permits the feature row to move from `DONE` to `VERIFIED`
+and the GH issue to close. The `check_terminal_status_evidence.sh` PreToolUse
+hook enforces the feature `VERIFIED` flip. Bug `FIXED` flips in
+`docs/bugs.md` are not hook-enforced; bug verification is enforced by the
+post-merge issue close gate.
 
 **"Tooling unavailable" is NOT an acceptable deferral reason** unless a specific tool is named and confirmed missing (e.g., the E2E test runner's browser binary is not installed, a required upstream endpoint is unreachable, a dependent service is down). "I'll do it next session" is not a tool-unavailability claim — it's a discipline lapse. The `check_unfinished_verification.sh` Stop hook (provided by claude-coding-kit) surfaces unverified `DONE` rows at session end so the gap doesn't quietly carry over.
 
@@ -100,7 +126,7 @@ PR may merge when ALL of the following hold:
 
 - Tests pass under the project's test command (the merge gate from `AGENTS.md`).
 - Implementation audit loop is clean (Gate 4).
-- Verification is complete for the PR's tier (Gate 5).
+- Gate 5a pre-merge verification is complete for the PR's tier.
 - Docs sync completed if triggered (`.claude/rules/24-doc-sync.md`).
 - Version bump committed as the last commit before opening the PR (`.claude/rules/40-version-bump.md`).
 - For PRs that reference an open bug/feature: the referenced row has reached its terminal status (`FIXED` for bugs, `DONE` for features) — the existing fix-or-implement merge gate.
@@ -108,7 +134,9 @@ PR may merge when ALL of the following hold:
 After merge:
 
 - Feature status moves to `DONE` only after **all** WIs are merged AND every acceptance criterion is implemented.
-- `VERIFIED` is a separate post-implementation status, set after Gate 5's final-WI acceptance pass lands and is recorded in the row. Requires a `dev-docs/verification/feature-<id>-<YYYYMMDD>.md` evidence file (PreToolUse hook enforces).
+- Gate 5b runs against the merged build using the merge SHA. `VERIFIED` is a
+  separate post-merge status set only after its evidence file records
+  `result: pass`; the PreToolUse hook enforces this feature-row transition.
 - GH issue closes per close-gate rule (closure comment cites the verification: commit SHA + what was tested + what was observed).
 
 ## Gate progress is recorded in the GH issue (binding)
@@ -179,4 +207,3 @@ Feature #46 (a new external-integration feature, 11 WIs, High priority):
 - **Gate 4 (Impl audit)**: per-PR via `/fix-issue` audit loop.
 - **Gate 5 (Verification)**: WI-0a, WI-0b, WI-1, WI-2 = foundational, no app-level verify. WI-7 (integration) = slice verify against a mocked upstream endpoint behind the project's intended abstraction. WI-10 (user-facing) = run the app the way this project runs and observe (automated with the project's E2E tool). Final WI = full acceptance pass (every acceptance criterion exercised end-to-end).
 - **Gate 6 (Merge + close)**: each WI's PR merges through its own gate. Final WI moves feature row to `DONE`. After Gate 5 final acceptance pass: row → `VERIFIED`, GH #144 closes with citation.
-

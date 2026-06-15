@@ -1,3 +1,7 @@
+---
+description: Open and guide execution of the project's manual testing guide
+---
+
 # Manual Testing Guide
 
 Open the comprehensive testing guide and help the user test this project's features.

@@ -66,19 +66,24 @@ codex -c 'shell_environment_policy.inherit=all'
 
 ## Exec Mode Patterns
 
+For audits, plan reviews, and background work, route through `cc-suite`
+(`/cc-suite:audit`, `/cc-suite:review-plan`, and their `--background` modes).
+If direct `codex exec` is necessary, close stdin with `< /dev/null` whenever
+the prompt is an argument. See `.claude/rules/53-codex-runner-isolation.md`.
+
 ### Pipeline Integration
 ```bash
 # Read prompt from file
 cat prompt.txt | codex exec -
 
 # Chain with other tools
-codex exec --json "analyze" | jq '.messages[-1].content'
+codex exec --json "analyze" < /dev/null | jq '.messages[-1].content'
 
 # Save structured output
-codex exec --output-schema schema.json -o result.json "generate"
+codex exec --output-schema schema.json -o result.json "generate" < /dev/null
 
 # CI error handling
-codex exec "fix" || echo "Codex failed" && exit 1
+codex exec "fix" < /dev/null || { echo "Codex failed"; exit 1; }
 ```
 
 ### Output Schema Validation
@@ -99,7 +104,7 @@ codex exec "fix" || echo "Codex failed" && exit 1
 ```
 
 ```bash
-codex exec --output-schema schema.json "refactor and report changes"
+codex exec --output-schema schema.json "refactor and report changes" < /dev/null
 ```
 
 ### Resume Patterns
@@ -108,8 +113,8 @@ codex exec --output-schema schema.json "refactor and report changes"
 codex resume <id> "now also add tests"
 
 # Resume in exec mode
-codex exec resume <id>
-codex exec resume --last
+codex exec resume <id> < /dev/null
+codex exec resume --last < /dev/null
 ```
 
 ## Review Command Patterns
@@ -278,7 +283,7 @@ codex -c 'features.mcp=true' "task"
 #!/bin/bash
 set -e
 
-codex exec "task" 2>&1 | tee codex.log
+codex exec "task" < /dev/null 2>&1 | tee codex.log
 EXIT_CODE=${PIPESTATUS[0]}
 
 if [ $EXIT_CODE -ne 0 ]; then
@@ -296,7 +301,7 @@ fi
 codex -m gpt-4.1-mini "simple formatting fix"
 
 # Skip unnecessary checks
-codex exec --skip-git-repo-check "standalone task"
+codex exec --skip-git-repo-check "standalone task" < /dev/null
 ```
 
 ### Manage Context
@@ -308,10 +313,11 @@ codex --no-cache "new unrelated task"
 
 ### Parallel Execution
 ```bash
-# Run multiple independent tasks
-codex exec "fix file1.ts" &
-codex exec "fix file2.ts" &
-wait
+# Route background work through cc-suite for closed stdin, deadlines,
+# heartbeats, and job tracking.
+/cc-suite:audit --background
+/cc-suite:status <jobId>
+/cc-suite:result <jobId>
 ```
 
 ## Integration Examples
@@ -320,7 +326,7 @@ wait
 ```bash
 # .git/hooks/pre-commit
 #!/bin/bash
-codex exec -m gpt-4.1-mini "check staged files for issues" || exit 1
+codex exec -m gpt-4.1-mini "check staged files for issues" < /dev/null || exit 1
 ```
 
 ### VS Code Task

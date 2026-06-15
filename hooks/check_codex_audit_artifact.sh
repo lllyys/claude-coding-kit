@@ -1,252 +1,217 @@
 #!/bin/bash
 # PreToolUse hook for the Bash tool.
 #
-# Purpose: blocks `gh pr merge` (and equivalents) unless there's a
-# Codex audit log at `.claude/codex-audits/<branch>-audit.md` for the
-# current branch with a final_verdict of `ship-as-is` or
-# `follow-up-recommended`. Catches the workflow gap where bug-fix PRs
-# merged to main without the Gate-4 audit step from
-# `.claude/rules/47-feature-workflow.md`.
+# Blocks `gh pr merge <N>` for source-touching PRs unless the named PR's
+# head commit contains a valid Codex audit log at:
+#   .claude/codex-audits/<head-branch>-audit.md
 #
-# The audit file's required frontmatter:
-#
-#   ---
-#   branch: <current branch name>
-#   threadId: <Codex exec session id, or manual-fallback>
-#   rounds: <integer ≥ 1>
-#   final_verdict: ship-as-is | follow-up-recommended | block-recommended
-#   date: YYYY-MM-DD
-#   ---
-#
-# Exits 0 to allow, 2 (with message on stderr) to block.
-#
-# Escape hatch: meta-process / docs-only PRs that touch zero source
-# files don't need an audit. The hook detects this by checking
-# `git diff main..HEAD --name-only` — if the branch changed only
-# docs / config / hooks (no tracked source file), allow without an
-# audit. "Source file" = any tracked file that is NOT documentation
-# (*.md, *.mdx, *.txt, *.rst), the docs/ or dev-docs/ trees, or the
-# .claude/ toolkit itself.
-#
-# Reads PreToolUse JSON from stdin.
+# Reads PreToolUse JSON from stdin. Exits 0 to allow, 2 to block.
 
 set -euo pipefail
 
 INPUT="$(cat)"
 
+# The hook can only fail open when the enforcement tools themselves are absent.
+if ! command -v gh >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
+    exit 0
+fi
 if ! command -v jq >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
-    # Tool missing — fail open rather than block the agent.
-    exit 0
-fi
-
-TOOL_NAME="$(echo "$INPUT" | jq -r '.tool_name // ""')"
-[[ "$TOOL_NAME" == "Bash" ]] || exit 0
-
-COMMAND="$(echo "$INPUT" | jq -r '.tool_input.command // ""')"
-
-# Match `gh pr merge` with any flags. Use a permissive regex so
-# `--squash`, `--rebase`, `--auto`, `--admin`, etc. all trigger.
-# Skip if the command is some other gh pr usage (view, list, comment).
-if ! echo "$COMMAND" | grep -qE '(^|[[:space:]])gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
-    exit 0
-fi
-
-# Resolve repo root + current branch from the cwd of the `gh pr merge`
-# invocation — NOT $CLAUDE_PROJECT_DIR.
-#
-# A worktree-isolated agent runs `gh pr merge` from its own worktree,
-# but $CLAUDE_PROJECT_DIR points at the primary checkout. Keying off it
-# would read a sibling worktree's branch (and its audit log) and wrongly
-# block or pass the merge. The PreToolUse payload's `.cwd` is the
-# invocation's working directory; fall back to $(pwd), then
-# $CLAUDE_PROJECT_DIR, only if it is absent or invalid.
-HOOK_CWD="$(echo "$INPUT" | jq -r '.cwd // empty')"
-cd "${HOOK_CWD:-$(pwd)}" 2>/dev/null || cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" 2>/dev/null || exit 0
-
-if ! REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || [[ -z "$REPO_ROOT" ]]; then
-    # Not inside a git working tree — can't enforce, fail open.
-    exit 0
-fi
-cd "$REPO_ROOT"
-
-if ! BRANCH="$(git branch --show-current 2>/dev/null)" || [[ -z "$BRANCH" ]]; then
-    # Detached HEAD or non-git state — can't enforce, fail open.
-    exit 0
-fi
-
-# main / master never gets merged via `gh pr merge` from itself
-# (you'd be merging some OTHER PR). Skip the check.
-case "$BRANCH" in
-    main|master) exit 0 ;;
-esac
-
-# Detect docs/meta-only PRs that don't need a code audit.
-#
-# Diff against origin/main with a three-dot range (merge-base...HEAD),
-# NOT the local `main` ref. The local `main` ref is shared by every
-# worktree under one repo and is routinely stale — a two-dot
-# `git diff main..HEAD` from a worktree picks up source files from
-# OTHER PRs that merged into main after this branch forked, wrongly
-# flagging a docs-only PR as source-touching. `origin/main...HEAD`
-# (after a best-effort fetch) counts only the files THIS branch
-# changed since it diverged from origin/main.
-#
-# "Source touched" = any changed file that is NOT documentation or
-# meta. The exclusion list below is the doc/meta convention; everything
-# else (code in any language) counts as source. Adjust the regex if
-# your project keeps source somewhere unusual.
-#
-# Fail open if the diff itself fails (offline, no upstream main, etc.).
-SRC_TOUCHED="no"
-git fetch origin main --quiet 2>/dev/null || true
-DIFF_BASE="origin/main"
-git rev-parse --verify --quiet origin/main >/dev/null 2>&1 || DIFF_BASE="main"
-# Doc / meta paths that DON'T count as a source change. Everything not
-# matching this is treated as source.
-DOC_META_RE='(\.(md|mdx|txt|rst)$|^docs/|^dev-docs/|^\.claude/)'
-if CHANGED="$(git diff "${DIFF_BASE}...HEAD" --name-only 2>/dev/null)"; then
-    if echo "$CHANGED" | grep -vE "$DOC_META_RE" | grep -q .; then
-        SRC_TOUCHED="yes"
-    fi
-fi
-if [[ "$SRC_TOUCHED" == "no" ]]; then
-    # Docs / hooks / config / rules only — audit not required.
-    exit 0
-fi
-
-# Audit file path.
-SAFE_BRANCH="${BRANCH//\//-}"
-AUDIT_FILE="$REPO_ROOT/.claude/codex-audits/${SAFE_BRANCH}-audit.md"
-
-if [[ ! -f "$AUDIT_FILE" ]]; then
-    cat >&2 <<EOF
-[codex-audit-merge-gate] BLOCKED.
-
-Branch \`$BRANCH\` touches source files but has no Codex audit log at:
-
-  $AUDIT_FILE
-
-Per .claude/rules/47-feature-workflow.md Gate 4 and the /fix-issue
-skill's Phase 4, every PR that ships source code must run through a
-Codex audit loop before merge. Two ways to proceed:
-
-  1. Run the audit. The cheap path:
-        a. Run /cc-suite:audit (read-only) — or /cc-suite:audit-fix for
-           the audit->fix->verify loop — against the diff vs main.
-           cc-suite drives Codex via "codex exec"; capture its session id.
-           Do NOT use the codex-toolkit MCP tool; it is no longer loaded.
-        b. Iterate until the verdict is "ship-as-is" or
-           "follow-up-recommended" (with follow-ups filed as
-           separate bugs).
-        c. Write the log to:
-              $AUDIT_FILE
-           with frontmatter:
-              ---
-              branch: $BRANCH
-              threadId: <from step a>
-              rounds: <count>
-              final_verdict: ship-as-is | follow-up-recommended
-              date: $(date +%Y-%m-%d)
-              ---
-        d. git add + commit the audit log alongside the fix.
-        e. Retry the merge.
-
-  2. If the audit is genuinely impractical (the Codex runner is down and
-     can't be brought up), do a manual mini-audit per the
-     /fix-issue skill's fallback procedure and write the same file
-     with final_verdict + a "Manual audit evidence" section
-     replacing the Codex transcript. The hook accepts manual logs.
-EOF
+    echo "[codex-audit-merge-gate] BLOCKED: jq and python3 are required to validate merge audit evidence." >&2
     exit 2
 fi
 
-# Validate the audit file's frontmatter.
-RESULT="$(AUDIT_FILE="$AUDIT_FILE" BRANCH="$BRANCH" python3 - <<'PYEOF'
+TOOL_NAME="$(printf '%s' "$INPUT" | jq -r '.tool_name // ""')"
+[[ "$TOOL_NAME" == "Bash" ]] || exit 0
+
+COMMAND="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // ""')"
+if ! printf '%s' "$COMMAND" | grep -qE '(^|[[:space:]])gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
+    exit 0
+fi
+
+block() {
+    echo "[codex-audit-merge-gate] BLOCKED." >&2
+    echo >&2
+    printf '%s\n' "$1" >&2
+    exit 2
+}
+
+# Require an explicit PR number so the hook can validate the intended PR even
+# when the command is run from main/master or another worktree.
+if ! PR_NUMBER="$(COMMAND="$COMMAND" python3 - <<'PYEOF'
+import os
+import re
+import shlex
+import sys
+
+try:
+    tokens = shlex.split(os.environ["COMMAND"])
+except ValueError as exc:
+    print(f"parse error: {exc}")
+    sys.exit(1)
+
+for i in range(len(tokens) - 2):
+    if tokens[i].rsplit("/", 1)[-1] != "gh":
+        continue
+    if tokens[i + 1 : i + 3] != ["pr", "merge"]:
+        continue
+    for token in tokens[i + 3 :]:
+        match = re.fullmatch(r"#?([0-9]+)", token)
+        if match:
+            print(match.group(1))
+            sys.exit(0)
+        match = re.search(r"/pull/([0-9]+)(?:/?$)", token)
+        if match:
+            print(match.group(1))
+            sys.exit(0)
+
+sys.exit(1)
+PYEOF
+)"; then
+    block "Use an explicit PR number: gh pr merge <N> [flags]. The audit gate cannot safely infer a PR from the current branch."
+fi
+
+HOOK_CWD="$(printf '%s' "$INPUT" | jq -r '.cwd // empty')"
+if ! cd "${HOOK_CWD:-$(pwd)}" 2>/dev/null; then
+    block "The Bash tool cwd is unavailable; cannot resolve the repository for PR #$PR_NUMBER."
+fi
+if ! REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || [[ -z "$REPO_ROOT" ]]; then
+    block "The merge command is not running inside a Git working tree; cannot validate PR #$PR_NUMBER."
+fi
+cd "$REPO_ROOT"
+
+if ! PR_JSON="$(gh pr view "$PR_NUMBER" --json headRefName,headRefOid,baseRefName 2>/dev/null)"; then
+    block "gh could not resolve PR #$PR_NUMBER. Confirm the PR exists and GitHub is reachable, then retry."
+fi
+
+HEAD_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.headRefName // empty')"
+HEAD_OID="$(printf '%s' "$PR_JSON" | jq -r '.headRefOid // empty')"
+BASE_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.baseRefName // empty')"
+if [[ -z "$HEAD_BRANCH" || ! "$HEAD_OID" =~ ^[0-9a-fA-F]{40}$ || -z "$BASE_BRANCH" ]]; then
+    block "PR #$PR_NUMBER did not return a valid head branch, head commit, and base branch."
+fi
+
+# Ensure the exact PR head commit is available locally. GitHub exposes pull
+# refs even for fork-originated PRs, where origin/<headRefName> may not exist.
+if ! git cat-file -e "${HEAD_OID}^{commit}" 2>/dev/null; then
+    if ! git fetch origin "pull/${PR_NUMBER}/head" --quiet 2>/dev/null; then
+        block "Could not fetch the head commit for PR #$PR_NUMBER ($HEAD_BRANCH)."
+    fi
+fi
+if ! git cat-file -e "${HEAD_OID}^{commit}" 2>/dev/null; then
+    block "The resolved head commit for PR #$PR_NUMBER is unavailable after fetch."
+fi
+
+BASE_REF="refs/remotes/origin/$BASE_BRANCH"
+if ! git cat-file -e "${BASE_REF}^{commit}" 2>/dev/null; then
+    if ! git fetch origin "$BASE_BRANCH" --quiet 2>/dev/null; then
+        block "Could not fetch base branch origin/$BASE_BRANCH for PR #$PR_NUMBER."
+    fi
+fi
+if ! git cat-file -e "${BASE_REF}^{commit}" 2>/dev/null; then
+    block "Base branch origin/$BASE_BRANCH is unavailable after fetch."
+fi
+
+# Docs/meta-only PRs do not require a code audit.
+DOC_META_RE='(\.(md|mdx|txt|rst)$|^docs/|^dev-docs/|^\.claude/)'
+if ! CHANGED="$(git diff "${BASE_REF}...${HEAD_OID}" --name-only 2>/dev/null)"; then
+    block "Could not compute the changed files for PR #$PR_NUMBER."
+fi
+if ! printf '%s\n' "$CHANGED" | grep -vE "$DOC_META_RE" | grep -q .; then
+    exit 0
+fi
+
+SAFE_BRANCH="${HEAD_BRANCH//\//-}"
+AUDIT_REL=".claude/codex-audits/${SAFE_BRANCH}-audit.md"
+AUDIT_DISPLAY="$REPO_ROOT/$AUDIT_REL"
+
+# Read from the PR head tree, not the working tree. This rejects untracked or
+# merely staged evidence and validates the PR named in the merge command.
+if ! git cat-file -e "${HEAD_OID}:${AUDIT_REL}" 2>/dev/null; then
+    block "PR #$PR_NUMBER branch \`$HEAD_BRANCH\` touches source files but does not contain a tracked audit log at:
+
+  $AUDIT_DISPLAY
+
+Run the Gate 4 audit, write the required frontmatter, commit the log to the PR branch, push it, and retry the merge."
+fi
+if ! AUDIT_CONTENT="$(git show "${HEAD_OID}:${AUDIT_REL}" 2>/dev/null)"; then
+    block "The tracked audit log for PR #$PR_NUMBER could not be read from its head commit."
+fi
+
+if ! RESULT="$(printf '%s' "$AUDIT_CONTENT" | AUDIT_BRANCH="$HEAD_BRANCH" python3 -c '
+import datetime
 import os
 import re
 import sys
 
-path = os.environ["AUDIT_FILE"]
-branch = os.environ["BRANCH"]
+content = sys.stdin.read()
+branch = os.environ["AUDIT_BRANCH"]
 
-with open(path) as f:
-    content = f.read()
-
-m = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
-if not m:
+match = re.match(r"^---[ \t]*\n(.*?)\n---[ \t]*(?:\n|$)", content, re.DOTALL)
+if not match:
     print("error: missing or malformed frontmatter")
-    sys.exit(0)
+    raise SystemExit
 
-front = m.group(1)
 fields = {}
-for line in front.splitlines():
+for line in match.group(1).splitlines():
     if ":" in line:
-        k, v = line.split(":", 1)
-        fields[k.strip()] = v.strip()
+        key, value = line.split(":", 1)
+        fields[key.strip()] = value.strip()
 
-if fields.get("branch", "") != branch:
-    print(f"error: frontmatter branch={fields.get('branch','')!r} doesn't match current branch {branch!r}")
-    sys.exit(0)
+if fields.get("branch") != branch:
+    print(f"error: branch={fields.get(\"branch\", \"\")!r} does not match PR head branch {branch!r}")
+    raise SystemExit
+
+thread_id = fields.get("threadId", "")
+if not thread_id or thread_id.startswith("<"):
+    print("error: threadId must be a non-empty Codex session id or manual-fallback")
+    raise SystemExit
+
+rounds = fields.get("rounds", "")
+if not re.fullmatch(r"[1-9][0-9]*", rounds):
+    print("error: rounds must be an integer >= 1")
+    raise SystemExit
 
 verdict = fields.get("final_verdict", "")
-if verdict not in {"ship-as-is", "follow-up-recommended", "block-recommended"}:
-    print(f"error: final_verdict={verdict!r} must be one of ship-as-is, follow-up-recommended, block-recommended")
-    sys.exit(0)
-
+allowed = {"ship-as-is", "follow-up-recommended", "block-recommended"}
+if verdict not in allowed:
+    print(f"error: final_verdict={verdict!r} must be one of {sorted(allowed)}")
+    raise SystemExit
 if verdict == "block-recommended":
-    print(f"block: final_verdict=block-recommended — Codex says don't merge")
-    sys.exit(0)
+    print("block: final_verdict=block-recommended")
+    raise SystemExit
+
+date = fields.get("date", "")
+try:
+    datetime.date.fromisoformat(date)
+except ValueError:
+    print("error: date must be a valid YYYY-MM-DD date")
+    raise SystemExit
 
 print("ok")
-PYEOF
-)"
+')"; then
+    block "The audit log validator failed unexpectedly for PR #$PR_NUMBER."
+fi
 
 case "$RESULT" in
     ok)
         exit 0
         ;;
     block:*)
-        cat >&2 <<EOF
-[codex-audit-merge-gate] BLOCKED.
-
-The Codex audit log at $AUDIT_FILE marks final_verdict=block-recommended.
-That's a hard "do not merge." Either:
-
-  1. Address the audit's blocking findings, run another round, update
-     the verdict to ship-as-is or follow-up-recommended.
-  2. Override only with explicit user authorization for an emergency
-     ship — discuss with the user before bypassing this hook.
-
-Verdict comment:
-  ${RESULT#block: }
-EOF
-        exit 2
+        block "The audit log at $AUDIT_DISPLAY has final_verdict=block-recommended. Resolve the findings and commit an updated passing audit before merge."
         ;;
     error:*)
-        cat >&2 <<EOF
-[codex-audit-merge-gate] BLOCKED — audit log frontmatter invalid.
-
-  $AUDIT_FILE
+        block "The tracked audit log at $AUDIT_DISPLAY has invalid frontmatter.
 
 Reason: ${RESULT#error: }
 
-Required frontmatter:
-  ---
-  branch: $BRANCH
-  threadId: <Codex thread id>
-  rounds: <integer>
-  final_verdict: ship-as-is | follow-up-recommended | block-recommended
-  date: YYYY-MM-DD
-  ---
-
-Fix the file, retry the merge.
-EOF
-        exit 2
+Required fields:
+  branch: $HEAD_BRANCH
+  threadId: <Codex session id or manual-fallback>
+  rounds: <integer >= 1>
+  final_verdict: ship-as-is | follow-up-recommended
+  date: YYYY-MM-DD"
         ;;
     *)
-        # Unexpected python output — fail open with a stderr warning
-        # rather than block the agent on hook bugs.
-        echo "[codex-audit-merge-gate] python validator returned unexpected output: $RESULT" >&2
-        exit 0
+        block "The audit log validator returned unexpected output for PR #$PR_NUMBER: $RESULT"
         ;;
 esac
