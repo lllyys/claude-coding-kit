@@ -36,14 +36,14 @@ gh issue view {N} --json number,title,body,labels,state,assignees
 | Classification | Trigger | Path |
 |---------------|---------|------|
 | Bug | label contains `bug`, or body mentions error/crash/broken | Bug path (Phase 3a) |
-| Feature | label contains `feature`/`enhancement` | Feature path (Phase 3b) |
+| Feature | label contains `feature`/`enhancement` | **Redirect to `/feature-workflow` and STOP** (rule 47 — see Phase 3b) |
 | Question | label contains `question` | Question path (Phase 3c) |
 | Ambiguous | no matching labels | Ask user to classify |
 
 ### Phase 2: Branch Setup
 
 - Generate slug from title: lowercase, strip non-ASCII, replace spaces with `-`, truncate to 40 chars.
-- Branch name: `fix/issue-{N}-{slug}` (bug) or `feat/issue-{N}-{slug}` (feature).
+- Branch name: `fix/issue-{N}-{slug}`. (Features don't branch here — they redirect to `/feature-workflow`.)
 - If branch already exists: ask user — reuse or rename.
 - Create and checkout the branch.
 
@@ -59,12 +59,9 @@ Follow the philosophy from `/fix` — no half measures.
 4. **GREEN** — Fix the root cause with minimal, focused changes.
 5. **REFACTOR** — Clean up without changing behavior.
 
-#### 3b. Feature Path
+#### 3b. Feature Path — redirected, not handled here
 
-1. **Research** — you're on the main thread, so you route it (rule 60 §8): for a focused question, dispatch the `researcher` agent (best practices, prior art, established patterns); for a broad/high-stakes one, invoke `/deep-research` directly (a subagent can't). Fold the cited findings into the design.
-2. **Plan** — Design the implementation. If it would touch 10+ files or need 4+ work items, redirect to `/feature-workflow` and STOP this pipeline.
-3. **TDD implement** — RED/GREEN/REFACTOR per work item.
-4. **Edge cases** — Brainstorm and test: empty input, null, boundary values, malformed input, rapid/repeated actions, concurrent access.
+**Always redirect feature/enhancement issues to `/feature-workflow` and STOP this pipeline.** `.claude/rules/47-feature-workflow.md` is binding for every feature (Plan → independent plan audit → TDD → implementation audit → integration verification → merge). This command can't run Gate 2 (independent plan audit in a separate context) or Gate 5 (integration verification + evidence) inline, so there is **no size threshold and no waiver** — every feature goes through `/feature-workflow`, however small. (Research routing for that work is described in rule 60 §8.)
 
 #### 3c. Question Path
 
@@ -231,6 +228,7 @@ gh issue view {N} --json number,title,body,labels,state
 
 - Filter out closed issues (warn user).
 - Filter out questions (handle inline with `gh issue comment`, no worktree needed).
+- Filter out features/enhancements (redirect each to `/feature-workflow` per rule 47; no worktree).
 - Remaining issues proceed to worktree pipeline.
 
 ### M2: Create Worktrees
@@ -278,6 +276,6 @@ git worktree remove ../<repo>-worktree-{N}
 | No labels (ambiguous type) | Ask user to classify |
 | Codex runner (cc-suite) unavailable | Fall back to manual mini-audit (Phase 4f) |
 | Gate fails 3x | Report errors, keep branch, STOP |
-| Feature too large (10+ files) | Redirect to `/feature-workflow` |
+| Feature / enhancement issue | Redirect to `/feature-workflow` and STOP (rule 47 — no size threshold) |
 | Branch already exists | Ask user: reuse or rename |
 | Non-ASCII characters in title | Strip to ASCII for branch slug |

@@ -127,6 +127,7 @@ claude-coding-kit/
 ├── skills/                # 15 skills
 ├── hooks/                 # hook scripts + hooks.json
 ├── rules/                 # 12 bundled process rules (opt-in via @import)
+├── scripts/               # governance scripts: WI-linkage, new-deps gate, phase-gate template (rule 60)
 ├── cron-prompts/          # 4 bootstrapped + 1 opt-in (architecture-review)
 ├── examples/              # per-project config templates to copy in
 ├── LICENSE
